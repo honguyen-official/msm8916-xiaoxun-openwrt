@@ -23,7 +23,16 @@ jobs:
       run: |
         sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
         sudo docker image prune --all --force
-        sudo -E apt-get -qq update
+        # FIX (2026-11-11): 2 lan lien tiep chet o day vi DNS khong phan giai duoc
+        # 'azure.archive.ubuntu.com' (Temporary failure resolving).
+        # 1) Cho DNS toi da 10 phut. 2) Doi guong Azure sang guong chinh
+        # archive.ubuntu.com trong ca sources.list va apt-mirrors.txt.
+        for i in $(seq 1 20); do
+          if getent hosts archive.ubuntu.com >/dev/null 2>&1; then echo "DNS OK (lan $i)"; break; fi
+          echo "Dang cho DNS ($i/20)..."; sleep 30
+        done
+        sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g' /etc/apt/sources.list /etc/apt/apt-mirrors.txt 2>/dev/null || true
+        sudo -E apt-get -qq update || sudo -E apt-get -qq update
         sudo -E ./devenv/dependencies.sh
         sudo -E apt-get -qq autoremove --purge
         sudo -E apt-get -qq clean
