@@ -23,10 +23,15 @@ jobs:
       run: |
         sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
         sudo docker image prune --all --force
-        # FIX (2026-11-11): 2 lan lien tiep chet o day vi DNS khong phan giai duoc
-        # 'azure.archive.ubuntu.com' (Temporary failure resolving).
-        # 1) Cho DNS toi da 10 phut. 2) Doi guong Azure sang guong chinh
-        # archive.ubuntu.com trong ca sources.list va apt-mirrors.txt.
+        # FIX2 (2026-11-12): Sua lan 1 chua du. Log run #2 cho thay vong cho DNS
+        # chay het 20/20 lan ma DNS khong len, va sau khi doi guong thi loi
+        # chuyen sang 'archive.ubuntu.com' - tuc DNS cua may chu Azure khong
+        # phan giai duoc ten mien Ubuntu (nhung github.com thi van phan giai
+        # duoc, buoc Checkout chay binh thuong). Cach sua: doi may chu DNS
+        # sang Google 8.8.8.8 + Cloudflare 1.1.1.1 ngay dau buoc.
+        sudo rm -f /etc/resolv.conf
+        printf 'nameserver 8.8.8.8\nnameserver 1.1.1.1\n' | sudo tee /etc/resolv.conf
+        echo "resolv.conf hien tai:"; cat /etc/resolv.conf
         for i in $(seq 1 20); do
           if getent hosts archive.ubuntu.com >/dev/null 2>&1; then echo "DNS OK (lan $i)"; break; fi
           echo "Dang cho DNS ($i/20)..."; sleep 30
