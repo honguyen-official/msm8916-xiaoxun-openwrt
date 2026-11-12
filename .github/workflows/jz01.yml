@@ -94,6 +94,10 @@ jobs:
       run: |
         cd openwrt/bin/targets/*/*
         rm -rf packages
+        # FIX3 (2026-11-12): copy flash.sh tu repo vao thu muc output de no co
+        # mat trong artifact (truoc day no chi nam trong repo, khong nam o day).
+        cp $GITHUB_WORKSPACE/msm89xx/image/flash.sh ./openwrt-msm89xx-msm8916-xiaoxun-jz0145-v33-flash.sh 2>/dev/null || echo "flash.sh khong tim thay, bo qua"
+        echo "Cac file build ra:"; ls -la
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
         echo "status=success" >> $GITHUB_OUTPUT
 
@@ -102,10 +106,10 @@ jobs:
       if: steps.organize.outputs.status == 'success' && !cancelled()
       with:
         name: openwrt_firmware_${{ env.DEVICE_NAME }}_${{ env.FILE_DATE }}
+        # FIX3 (2026-11-12): run #4 build xong nhung upload duoc 0 file vi
+        # danh sach ten file cu khong khop ten file build ra that (va
+        # upload-artifact mac dinh chi canh bao chu khong bao loi). Doi sang
+        # wildcard de upload dung file nao build ra, va bao loi neu khong co file.
+        if-no-files-found: error
         path: |
-          ${{ env.FIRMWARE }}/openwrt-msm89xx-msm8916-xiaoxun-jz0145-v33-squashfs-gpt_both0.bin
-          ${{ env.FIRMWARE }}/openwrt-msm89xx-msm8916-xiaoxun-jz0145-v33-squashfs-boot.img
-          ${{ env.FIRMWARE }}/openwrt-msm89xx-msm8916-xiaoxun-jz0145-v33-squashfs-system.img
-          ${{ env.FIRMWARE }}/openwrt-msm89xx-msm8916-xiaoxun-jz0145-v33.manifest
-          ${{ env.FIRMWARE }}/openwrt-msm89xx-msm8916-xiaoxun-jz0145-v33-flash.sh
-          ${{ env.FIRMWARE }}/openwrt-msm89xx-msm8916-xiaoxun-jz0145-v33-firmware.zip
+          ${{ env.FIRMWARE }}/openwrt-*
