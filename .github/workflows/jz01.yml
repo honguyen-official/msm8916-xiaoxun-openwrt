@@ -46,7 +46,13 @@ jobs:
     - name: "Clone OpenWrt source code"
       run: |
         df -hT $PWD
-        git clone --depth=1 --branch "main" https://git.openwrt.org/openwrt/openwrt.git openwrt
+        # FIX4 (2026-11-12): KHONG dung main nua. Main tu 20/10/2026 chi con
+        # kernel 6.18, ma target msm89xx cua repo nay ghim KERNEL_PATCHVER:=6.12
+        # nen "make defconfig" lang lang bo luon target JZ0145 va roi ve
+        # target mac dinh mediatek/filogic (router OpenWrt One) - do la ly do
+        # run #4 ra 0 file va run #5 ra firmware MediaTek. Nhanh 25.12 chi co
+        # kernel 6.12 va feeds cua no cung khoa theo nhanh 25.12, dung 1 cap.
+        git clone --depth=1 --branch "openwrt-25.12" https://git.openwrt.org/openwrt/openwrt.git openwrt
 
     - name: Load msm89xx target and packages
       run: |
@@ -73,6 +79,10 @@ jobs:
       run: |
         cd openwrt
         make defconfig
+        # GUARD (2026-11-12): neu defconfig lam mat target msm89xx/JZ0145 thi
+        # DUNG LAI NGAY (chi mat 2 phut) chu khong build nham 1.5h nhu run #4/#5.
+        grep -q '^CONFIG_TARGET_msm89xx=y' .config && grep -q '^CONFIG_TARGET_msm89xx_msm8916_DEVICE_xiaoxun-jz0145-v33=y' .config || { echo "LOI: defconfig da lam mat target msm89xx/JZ0145"; grep '^CONFIG_TARGET' .config | head -5; exit 1; }
+        echo "Target OK: msm89xx / xiaoxun-jz0145-v33"
         make download -j8
         find dl -size -1024c -exec ls -l {} \; || true
         find dl -size -1024c -exec rm -f {} \; || true
